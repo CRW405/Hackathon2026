@@ -9,7 +9,26 @@
 </head>
 
 <body>
-  hello world
+  {% include 'components/header.html' %}
+
+  <main>
+    <h1>Welcome to the 2084 Dashboard</h1>
+
+    <div class="datalist" id="recent-activities">
+      <h2>Recent Activities</h2>
+      <ol>
+        <li>placeholder</li>
+        <li>placeholder</li>
+        <li>placeholder</li>
+        <li>placeholder</li>
+        {% for activity in recent_activities %}
+        <li>{{ activity }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </main>
+
+  {% include 'components/footer.html' %}
 </body>
 
 </html>
