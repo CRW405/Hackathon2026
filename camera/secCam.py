@@ -32,8 +32,8 @@ def main():
         # classes=0: Filter specifically for class '0', which is 'person' in the COCO dataset.
         # conf=0.5: Only detect if 50% confident.
 
-        # results = model.track(frame, persist=True, classes=0, conf=0.5, verbose=False)
-        results = model.track(frame, persist=True, conf=0.5, verbose=False)
+        results = model.track(frame, persist=True, classes=0, conf=0.5, verbose=False)
+        # results = model.track(frame, persist=True, conf=0.5, verbose=False)
 
         # 4. Visualize the results
         # .plot() draws the bounding boxes and ID numbers automatically

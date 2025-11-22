@@ -28,9 +28,9 @@ while (running):
         # FIRSTNAME, LASTNAME, B00XXXXXX
         infoString = names[0] + ", " + names[1] + ", " + idRaw[0]
 
-        # response = requests.post(url, data=infoString)
-        # print(response.text)
-        print(infoString)
+        response = requests.post(url, data=infoString)
+        print(response.text)
+        # print(infoString)
     else:
         print("NOT A VALID STUDENT ID")
     rawInput = ""
