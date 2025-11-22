@@ -136,7 +136,7 @@ def packet_callback(packet):
             active_flows.add(flow_id)
             # Only do slow Reverse DNS if we couldn't get the name from SNI/HTTP
             host_name = resolve_ip(dst_ip)
-            print(f"[{time.strftime('%H:%M:%S')}] New Connection: {dst_ip} ({host_name}) port {dst_port}")
+            # print(f"[{time.strftime('%H:%M:%S')}] New Connection: {dst_ip} ({host_name}) port {dst_port}")
 
 # Clear the screen and start
 print("--- Website Sniffer (SNI & HTTP) Started ---")
