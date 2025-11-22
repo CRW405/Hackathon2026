@@ -5,7 +5,7 @@ import requests
 
 url = 'http://localhost:6000/api/trackSwipe/'
 
-# RegEx patterns to parse raw input data
+# RegEx patterns to parse raw input data 
 
 pattern = r"^%B\d{16}\^[A-Z]+\/[A-Z]+\^\w+\?\;\d{16}=\d+\?$" # checks if input is a valid student id
 namePattern = r"(?<=\^)[A-Z]+\/[A-Z]+(?=\^)" # grabs name
@@ -28,8 +28,9 @@ while (running):
         # FIRSTNAME, LASTNAME, B00XXXXXX
         infoString = names[0] + ", " + names[1] + ", " + idRaw[0]
 
-        response = requests.post(url, data=infoString)
-        print(response.text)
+        # response = requests.post(url, data=infoString)
+        # print(response.text)
+        print(infoString)
     else:
         print("NOT A VALID STUDENT ID")
     rawInput = ""
