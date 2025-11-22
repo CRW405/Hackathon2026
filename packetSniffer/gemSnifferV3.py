@@ -2,20 +2,70 @@ from scapy.all import sniff, IP, TCP, Raw
 import socket
 import time
 import struct
+import os
+import getpass
+import requests  # <-- ADDED: To send HTTP requests
 
 # --- Configuration ---
-# Cache to store IP -> Hostname mappings to speed up processing
+# Set the URL of your Flask server
+SERVER_URL = "http://127.0.0.1:6000/api/packetSniff/postSniffs"
+
 dns_cache = {}
-# Set to track active connections so we don't spam the console
 active_flows = set()
 
+
+# --- User and Hostname Setup ---
+def get_os_username():
+    """Gets the currently logged-in OS user."""
+    try:
+        return os.getlogin()
+    except OSError:
+        return getpass.getuser()
+    except Exception:
+        return "unknown_user"
+
+
+def get_hostname():
+    """Gets the computer's network name."""
+    return socket.gethostname()
+
+
+CURRENT_USER = get_os_username()
+CURRENT_HOSTNAME = get_hostname()
+
+
+# --- NEW FUNCTION: Sends data to Flask server ---
+def send_to_server(website_name, dest_ip, src_ip):
+    """
+    Bundles data and sends it to the central server.
+    """
+    payload = {
+        "username": CURRENT_USER,
+        "hostname": CURRENT_HOSTNAME,
+        "website": website_name,
+        "ip_address": dest_ip,
+        "source_ip": src_ip,
+    }
+
+    try:
+        # Send the data as JSON in the POST request body
+        response = requests.post(SERVER_URL, json=payload, timeout=10)
+
+        # Optional: Log success or failure
+        if response.status_code == 200:
+            print(f"Successfully reported: {website_name}")
+        else:
+            print(f"Error reporting to server: {response.status_code}")
+
+    except requests.exceptions.RequestException as e:
+        # Don't crash the sniffer if the server is down
+        print(f"Server connection failed: {e}")
+
+
 def resolve_ip(ip_address):
-    """
-    Resolves an IP to a hostname with caching to prevent lag.
-    """
+    # ... (this function is unchanged) ...
     if ip_address in dns_cache:
         return dns_cache[ip_address]
-
     try:
         hostname = socket.gethostbyaddr(ip_address)[0]
         dns_cache[ip_address] = hostname
@@ -26,121 +76,101 @@ def resolve_ip(ip_address):
     except Exception:
         return "Unknown"
 
+
 def parse_sni(payload):
-    """
-    Manually parses the TLS Client Hello to extract the Server Name Indication (SNI).
-    This reveals the website name in HTTPS traffic.
-    """
+    # ... (this function is unchanged) ...
     try:
-        # Check for TLS Handshake (0x16) and Version (0x0301, 0x0302, 0x0303)
-        if payload[0] != 0x16: return None
-        
-        # Skip Record Header (5 bytes)
-        # Handshake Header: Type (1), Length (3), Version (2), Random (32)
-        pos = 5 
-        
-        if payload[pos] != 0x01: return None # Must be Client Hello message
-        
-        pos += 4 # Skip Handshake Type & Length
-        pos += 2 # Skip Hello Version
-        pos += 32 # Skip Random
-        
-        # Skip Session ID
+        if payload[0] != 0x16:
+            return None
+        pos = 5
+        if payload[pos] != 0x01:
+            return None
+        pos += 4 + 2 + 32
         sess_id_len = payload[pos]
         pos += 1 + sess_id_len
-        
-        # Skip Cipher Suites
-        cipher_len = int.from_bytes(payload[pos:pos+2], 'big')
+        cipher_len = int.from_bytes(payload[pos : pos + 2], "big")
         pos += 2 + cipher_len
-        
-        # Skip Compression Methods
         comp_len = payload[pos]
         pos += 1 + comp_len
-        
-        # We are now at Extensions
-        if pos + 2 > len(payload): return None
-        ext_len = int.from_bytes(payload[pos:pos+2], 'big')
+        if pos + 2 > len(payload):
+            return None
+        ext_len = int.from_bytes(payload[pos : pos + 2], "big")
         pos += 2
-        
         end_ext = pos + ext_len
         while pos < end_ext:
-            if pos + 4 > len(payload): break
-            # Extension Type (2 bytes)
-            ext_type = int.from_bytes(payload[pos:pos+2], 'big')
-            # Extension Data Length (2 bytes)
-            ext_data_len = int.from_bytes(payload[pos+2:pos+4], 'big')
+            if pos + 4 > len(payload):
+                break
+            ext_type = int.from_bytes(payload[pos : pos + 2], "big")
+            ext_data_len = int.from_bytes(payload[pos + 2 : pos + 4], "big")
             pos += 4
-            
-            # Extension Type 0 is "server_name"
-            if ext_type == 0x0000: 
-                # SNI List Length (2)
+            if ext_type == 0x0000:
+                pos += 2 + 1
+                sni_name_len = int.from_bytes(payload[pos : pos + 2], "big")
                 pos += 2
-                # SNI Type (1) - 0 is host_name
-                pos += 1 
-                # SNI Name Length (2)
-                sni_name_len = int.from_bytes(payload[pos:pos+2], 'big')
-                pos += 2
-                # The actual Hostname string
-                sni_host = payload[pos:pos+sni_name_len].decode('utf-8')
+                sni_host = payload[pos : pos + sni_name_len].decode("utf-8")
                 return sni_host
-            
             pos += ext_data_len
-            
     except Exception:
-        pass # Parsing failed, likely not a standard Client Hello
+        pass
     return None
 
+
 def extract_http_host(packet):
-    """Attempts to read the HTTP Host header."""
+    # ... (this function is unchanged) ...
     try:
-        payload = packet[Raw].load.decode('utf-8', errors='ignore')
+        payload = packet[Raw].load.decode("utf-8", errors="ignore")
         if "Host: " in payload:
-            lines = payload.split('\r\n')
-            host = next((line.split(': ')[1] for line in lines if "Host: " in line), None)
+            lines = payload.split("\r\n")
+            host = next(
+                (line.split(": ")[1] for line in lines if "Host: " in line), None
+            )
             return host
     except Exception:
         pass
     return None
+
 
 def packet_callback(packet):
     if IP in packet and TCP in packet:
         src_ip = packet[IP].src
         dst_ip = packet[IP].dst
         dst_port = packet[TCP].dport
-        
-        # Unique ID for this connection flow
+
         flow_id = (src_ip, dst_ip, dst_port)
 
-        # Check for Raw payload (Data)
         if packet.haslayer(Raw):
             payload = packet[Raw].load
-            
-            # --- HTTPS (Port 443) Analysis ---
+
             if dst_port == 443:
                 sni = parse_sni(payload)
                 if sni:
-                    print(f"\n[HTTPS] Connecting to: {sni} ({dst_ip})")
-                    active_flows.add(flow_id) # Mark flow as seen
-                    return
-
-            # --- HTTP (Port 80) Analysis ---
-            elif dst_port == 80:
-                host = extract_http_host(packet)
-                if host:
-                    print(f"\n[HTTP]  Connecting to: {host} ({dst_ip})")
+                    # --- MODIFIED ---
+                    # Instead of printing, send to server
+                    # send_to_server(website_name, dest_ip, src_ip)
+                    send_to_server(sni, dst_ip, src_ip)
                     active_flows.add(flow_id)
                     return
 
-        # --- General Connection Summary (Fallback) ---
+            elif dst_port == 80:
+                host = extract_http_host(packet)
+                if host:
+                    # --- MODIFIED ---
+                    # Instead of printing, send to server
+                    send_to_server(host, dst_ip, src_ip)
+                    active_flows.add(flow_id)
+                    return
+
         if flow_id not in active_flows:
             active_flows.add(flow_id)
-            # Only do slow Reverse DNS if we couldn't get the name from SNI/HTTP
-            host_name = resolve_ip(dst_ip)
-            # print(f"[{time.strftime('%H:%M:%S')}] New Connection: {dst_ip} ({host_name}) port {dst_port}")
+            # You could also report these generic connections if you want
+            # host_name = resolve_ip(dst_ip)
+            # send_to_server(f"Unknown (IP: {host_name})", dst_ip, src_ip)
 
-# Clear the screen and start
-print("--- Website Sniffer (SNI & HTTP) Started ---")
-print("Detects website names from HTTPS Handshakes and HTTP Headers.")
+
+# --- Main Execution ---
+print("--- Website Sniffer (Reporting to Server) ---")
+print(f"--- Monitoring traffic for user: {CURRENT_USER} on {CURRENT_HOSTNAME} ---")
+print(f"--- Reporting to: {SERVER_URL} ---")
 print("-" * 60)
 
 # Sniff for TCP traffic

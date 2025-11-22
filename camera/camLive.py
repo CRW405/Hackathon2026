@@ -114,5 +114,5 @@ if __name__ == "__main__":
 
     # Start the API Server
     # Listen on all interfaces (0.0.0.0) on port 8000
-    print("Starting Server at http://localhost:6000")
-    uvicorn.run(app, host="0.0.0.0", port=6000)
+    print("Starting Server at http://localhost:8000")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

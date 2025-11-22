@@ -3,6 +3,6 @@
 
 ## 2084 
 
-Its like 1984 but your big brother.
+Its like 1984 but you're big brother.
 
 

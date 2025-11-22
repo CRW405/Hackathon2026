@@ -1,12 +1,23 @@
 from pynput import keyboard
+import re
+
+url = "http://127.0.0.1:6000/api/trackSwipe/"
 
 def on_press(key):
     """
     Callback function invoked when a key is pressed.
     """
+
+    banned_words = ["FRICK", "STINKY"]
+
     try:
         # print alphanumeric keys
-        print(f'{key.char}')
+        keystrokes += {f'{key.char}'}
+        if (any(word.capitalize in keystrokes for word in banned_words)):
+            payload = {
+                "flagged_word": word,
+            }
+            response = requests.post(url, json=payload)
     except AttributeError:
         # print special keys (e.g., ctrl, alt, enter)
         print(f'{key}')

@@ -17,18 +17,10 @@
     <div class="datalist" id="recent-activities">
       <h2>Recent Activities</h2>
       <ol>
-        {% for entry in data %}
+        {% for sniff in sniffs %}
         <li>
-          {% if entry.type == "swipe" %}
-          <h3>{{ entry.first }} {{ entry.last }}</h3>
-          <h4>Badge ID: {{ entry.bid }}</h4>
-          <h4>Timestamp: {{ entry.timestamp }}</h4>
-          {% elif entry.type == "sniff" %}
-          <h3>Username: {{ entry.username }}</h3>
-          <h4>Website: {{ entry.website }}</h4>
-          <h4>Source IP: {{ entry.source_ip }}</h4>
-          <h4>Timestamp: {{ entry.timestamp }}</h4>
-          {% endif %}
+          <h3>{{sniff.username}} {{sniff.website}}</h3>
+          <h4>{{sniff.source_ip}} {{sniff.timestamp}}</h4>
         </li>
         {% endfor %}
       </ol>

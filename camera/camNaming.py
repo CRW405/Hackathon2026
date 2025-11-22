@@ -14,7 +14,7 @@ lock = threading.Lock()
 
 # --- NEW: Persistence Maps for Naming ---
 # 1. Stores which numeric ID corresponds to a known name (e.g., {1: "John Doe"})
-ID_TO_NAME_MAP = {1} 
+ID_TO_NAME_MAP = {1: "John Doe"} 
 # 2. A simulated list of known names to assign
 KNOWN_NAMES_LIST = ["John Doe", "Sarah Connor", "Admin User"]
 # 3. Tracks which name has been assigned to an ID
