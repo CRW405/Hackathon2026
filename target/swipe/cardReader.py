@@ -1,8 +1,10 @@
 import re
 import requests
 import os
+
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except Exception:
     pass
@@ -14,7 +16,7 @@ if not backend_base:
     backend_port = os.environ.get("BACKEND_PORT", "6000")
     backend_base = f"http://{backend_host}:{backend_port}"
 
-track_path = os.environ.get("TRACK_SWIPE_PATH", "/api/trackSwipe/")
+track_path = os.environ.get("TRACK_SWIPE_PATH", "/api/swipe/post/")
 url = f"{backend_base}{track_path}"
 
 # RegEx patterns to parse raw input data

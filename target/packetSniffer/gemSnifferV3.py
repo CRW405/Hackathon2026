@@ -19,6 +19,7 @@ import requests  # <-- ADDED: To send HTTP requests
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except Exception:
     pass
@@ -31,7 +32,7 @@ if not packet_base:
     backend_port = os.environ.get("BACKEND_PORT", "6000")
     packet_base = f"http://{backend_host}:{backend_port}"
 
-packet_path = os.environ.get("PACKET_SNIFFER_POST_PATH", "/api/packetSniff/postSniffs")
+packet_path = os.environ.get("PACKET_SNIFFER_POST_PATH", "/api/packet/post")
 SERVER_URL = f"{packet_base}{packet_path}"
 
 dns_cache = {}
