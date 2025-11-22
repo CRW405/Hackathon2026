@@ -6,10 +6,10 @@ def on_press(key):
     """
     try:
         # print alphanumeric keys
-        print(f'Key pressed: {key.char}')
+        print(f'{key.char}')
     except AttributeError:
         # print special keys (e.g., ctrl, alt, enter)
-        print(f'Special key pressed: {key}')
+        print(f'{key}')
 
 def on_release(key):
     """
