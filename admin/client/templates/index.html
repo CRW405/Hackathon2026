@@ -30,6 +30,8 @@
           <h4>Timestamp: {{ entry.timestamp }}</h4>
           {% endif %}
         </li>
+        {% else %}
+        <li>No recent activities.</li>
         {% endfor %}
       </ol>
     </div>

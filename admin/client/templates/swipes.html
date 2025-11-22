@@ -19,9 +19,11 @@
       <ol>
         {% for swipe in swipes %}
         <li>
-          <h3>{{swipe.first}} {{swipe.last}}</h3>
-          <h4>{{swipe.bid}} {{swipe.timestamp}}</h4>
+          <h3>{{ swipe.first }} {{ swipe.last }}</h3>
+          <h4>{{ swipe.bid }} {{ swipe.timestamp }}</h4>
         </li>
+        {% else %}
+        <li>No recent swipes.</li>
         {% endfor %}
       </ol>
     </div>
