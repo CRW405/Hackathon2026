@@ -11,5 +11,8 @@ def placeholder_api():
     return jsonify({"message": "This is a placeholder API endpoint."})
 
 
+server.register_blueprint(swipe_routes)
+server.register_blueprint(packet_routes)
+
 if __name__ == "__main__":
     server.run(debug=True, port=6000)
