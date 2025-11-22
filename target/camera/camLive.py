@@ -14,130 +14,79 @@ this only where you have permission to capture video.
 
 import cv2
 import threading
-import uvicorn
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse, JSONResponse
-from ultralytics import YOLO
-import json
 import time
+import requests
+from ultralytics import YOLO
+import os
 
-# --- Global Variables to Share Data Between Threads ---
-# These hold the latest data from the camera thread so the API can read it.
-output_frame = None
-current_tracking_data = []
-lock = threading.Lock()
+"""Lightweight camera uploader that captures frames and POSTs them to the
+backend server.
 
-# Initialize FastAPI
-app = FastAPI()
+This script captures frames from a local camera, encodes them to JPEG, and
+POSTs them to the admin backend at /api/cameras/post/<camera_id>.
+"""
+
+import cv2
+import threading
+import time
+import requests
+from ultralytics import YOLO
+import os
+
+# --- CONFIGURATION ---
+CAMERA_ID = os.getlogin()  # Unique ID for this camera
+
+# Load .env if present so SERVER env can be used
+try:
+    from dotenv import load_dotenv
+    from pathlib import Path
+    env_path = Path(__file__).resolve().parents[2] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
+
+# The backend admin server base URL is read from SERVER env or defaults to localhost:6000
+SERVER_BASE = os.environ.get("SERVER", "http://localhost:6000")
+SERVER_URL = f"{SERVER_BASE}/api/cameras/post/{CAMERA_ID}"
+CAM_INDEX = 0  # Camera device index
 
 
-def run_tracker():
-    """
-    Background thread that continuously reads from the camera,
-    runs the AI, and updates the global variables.
-    """
-    global output_frame, current_tracking_data
-
-    # Load Model
-    print("Loading AI Model...")
+def run_camera():
+    print("Loading YOLO Model...")
     model = YOLO("yolov8n.pt")
 
-    # Open Camera (Change index to 0 or 1 as needed)
-    cap = cv2.VideoCapture(3)
-
+    cap = cv2.VideoCapture(CAM_INDEX)
     if not cap.isOpened():
-        cap = cv2.VideoCapture(0)  # Fallback to 0
+        raise RuntimeError("Could not open camera")
 
     while True:
         success, frame = cap.read()
         if not success:
-            break
+            continue
 
-        # Run YOLO Tracking
         results = model.track(frame, persist=True, classes=0, verbose=False)
+        annotated = results[0].plot()
 
-        # Parse Results for JSON API
-        # We extract just the info we need: ID, Confidence, and Bounding Box
-        frame_data = []
+        # Encode to JPEG
+        flag, encoded = cv2.imencode(".jpg", annotated)
+        if not flag:
+            continue
 
-        if results[0].boxes.id is not None:
-            ids = results[0].boxes.id.cpu().numpy().astype(int)
-            boxes = results[0].boxes.xyxy.cpu().numpy()  # x1, y1, x2, y2
+        frame_bytes = encoded.tobytes()
 
-            for i, person_id in enumerate(ids):
-                x1, y1, x2, y2 = boxes[i]
-                # Create a clean dictionary for this person
-                person_info = {
-                    "id": int(person_id),
-                    "bbox": [float(x1), float(y1), float(x2), float(y2)],
-                    "center": [float(x1 + (x2 - x1) / 2), float(y1 + (y2 - y1) / 2)],
-                }
-                frame_data.append(person_info)
+        # POST frame to backend server
+        try:
+            requests.post(
+                SERVER_URL,
+                files={"frame": ("frame.jpg", frame_bytes, "image/jpeg")},
+                timeout=0.1,
+            )
+        except requests.exceptions.RequestException:
+            # Don't crash if server is temporarily unreachable
+            pass
 
-        # Draw the visual boxes on the frame
-        annotated_frame = results[0].plot()
-
-        # Update Global State (Thread-Safe)
-        with lock:
-            current_tracking_data = frame_data
-            # Encode the frame to JPEG for streaming
-            (flag, encodedImage) = cv2.imencode(".jpg", annotated_frame)
-            if flag:
-                output_frame = encodedImage.tobytes()
-
-        # Slight sleep to prevent CPU hogging
-        time.sleep(0.01)
-
-    cap.release()
-
-
-def generate_video():
-    """Generator function for the video stream"""
-    global output_frame
-    while True:
-        with lock:
-            if output_frame is None:
-                continue
-            # Get the latest frame bytes
-            frame_bytes = output_frame
-
-        # Yield the frame in MJPEG format
-        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-
-
-# --- API Endpoints ---
-
-
-@app.get("/")
-def index():
-    return {
-        "message": "AI Tracker Running. Go to /video_feed for video or /tracking_data for JSON."
-    }
-
-
-@app.get("/tracking_data")
-def get_data():
-    """Returns the current locations of all people in the frame as JSON."""
-    with lock:
-        return {"count": len(current_tracking_data), "people": current_tracking_data}
-
-
-@app.get("/video_feed")
-def video_feed():
-    """Returns the visual video stream."""
-    return StreamingResponse(
-        generate_video(), media_type="multipart/x-mixed-replace; boundary=frame"
-    )
+        time.sleep(0.03)  # ~30 FPS
 
 
 if __name__ == "__main__":
-    # Start the AI loop in a separate background thread
-    t = threading.Thread(target=run_tracker)
-    t.daemon = True  # Ensures thread dies when main program dies
-    t.start()
-
-    # Start the API Server
-    # Listen on all interfaces (0.0.0.0) on port 8000
-    print("Starting Server at http://localhost:6000")
-    uvicorn.run(app, host="0.0.0.0", port=7000)
-
+    run_camera()

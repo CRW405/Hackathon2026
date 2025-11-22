@@ -53,11 +53,18 @@ def _parse_datetime(value: Any) -> Optional[datetime]:
         return None
 
 
-def _to_naive_utc(dt: datetime) -> datetime:
-    """Normalize datetime to naive UTC for safe comparisons."""
+def _to_local_naive(dt: datetime) -> datetime:
+    """Normalize datetime to naive local time for safe comparisons.
+
+    The backend stores timestamps using datetime.now() (naive local time).
+    To compare consistently we convert any timezone-aware datetime to the
+    local timezone and then drop tzinfo (naive local datetime).
+    If dt is already naive, return as-is.
+    """
     if dt.tzinfo is None:
         return dt
-    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    # Convert to local timezone then drop tzinfo
+    return dt.astimezone().replace(tzinfo=None)
 
 
 def within_time_range(item_ts: Any, start: Optional[str], end: Optional[str]) -> bool:
@@ -75,9 +82,9 @@ def within_time_range(item_ts: Any, start: Optional[str], end: Optional[str]) ->
 
     # Normalize to naive UTC for comparison
     try:
-        ts_n = _to_naive_utc(ts)
-        start_n = _to_naive_utc(start_dt) if start_dt else None
-        end_n = _to_naive_utc(end_dt) if end_dt else None
+        ts_n = _to_local_naive(ts)
+        start_n = _to_local_naive(start_dt) if start_dt else None
+        end_n = _to_local_naive(end_dt) if end_dt else None
     except Exception:
         return False
 

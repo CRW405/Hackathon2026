@@ -12,6 +12,16 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from requests.exceptions import RequestException
+import os
+from pathlib import Path
+
+# Load .env if present
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parents[1] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
 
 
 client = Blueprint("internet", __name__, url_prefix="/internet")
@@ -26,9 +36,8 @@ def internet_page():
     """
     sniffs: List[Dict[str, Any]] = []
     try:
-        response = requests.get(
-            "http://localhost:6000/api/packetSniff/getSniffs", timeout=5
-        )
+        backend = os.environ.get("SERVER", "http://localhost:6000")
+        response = requests.get(f"{backend}/api/packet/get", timeout=5)
         if response.ok:
             try:
                 payload = response.json()
@@ -42,40 +51,22 @@ def internet_page():
     except RequestException:
         logger.exception("Error fetching sniffs from backend")
 
-    # Apply optional filters from query params
+    # Apply optional filters from query params (date/time removed)
     username: Optional[str] = request.args.get("username")
     website: Optional[str] = request.args.get("website")
 
-    # Combine date + time inputs if present, otherwise accept legacy params.
-    sd = request.args.get("start_date")
-    st = request.args.get("start_time")
-    if sd:
-        start = f"{sd}T{st}" if st else f"{sd}T00:00:00"
-    else:
-        start = request.args.get("start")
-
-    ed = request.args.get("end_date")
-    et = request.args.get("end_time")
-    if ed:
-        end = f"{ed}T{et}" if et else f"{ed}T23:59:59"
-    else:
-        end = request.args.get("end")
-
-    if any([username, website, start, end]):
+    if any([username, website]):
         try:
             try:
                 from utils import filter_items
             except Exception:
                 from .utils import filter_items  # type: ignore
-            logger.info("Applying filters to sniffs: username=%s website=%s start=%s end=%s", username, website, start, end)
+            logger.info("Applying filters to sniffs: username=%s website=%s before=%s", username, website, len(sniffs) if isinstance(sniffs, list) else 0)
             before_count = len(sniffs) if isinstance(sniffs, list) else 0
-            # show sample timestamps for debugging
             sample_ts = [s.get("timestamp") for s in (sniffs[:5] if isinstance(sniffs, list) else [])]
             logger.debug("Sample timestamps before filter: %s", sample_ts)
 
-            sniffs = filter_items(
-                sniffs, username=username, website=website, start=start, end=end
-            )
+            sniffs = filter_items(sniffs, username=username, website=website)
 
             after_count = len(sniffs) if isinstance(sniffs, list) else 0
             logger.info("Filter applied: before=%s after=%s", before_count, after_count)

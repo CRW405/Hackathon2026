@@ -9,16 +9,29 @@ Data is stored in MongoDB in the `packets` collection.
 
 from flask import Blueprint, jsonify, request
 import datetime
+import os
+from pathlib import Path
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["hackathon"]
+# Load .env if present
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parents[2] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
+
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
+DB_NAME = os.environ.get("DB", "hackathon")
+
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
 swipe_collection = db["packets"]
 
 server = Blueprint("sniff", __name__)
 
 
-@server.route("/api/packetSniff/postSniffs", methods=["POST"])
+@server.route("/api/packet/post", methods=["POST"])
 def receive_sniff_data():
     data = request.json  # Get the JSON data from the request body
 
@@ -29,6 +42,16 @@ def receive_sniff_data():
     source_ip = data.get("source_ip")
     hostname = data.get("hostname")
 
+    alerts = db["alerts"]
+    packet_alert = alerts.find({"type": "packet"})
+
+    for alert in packet_alert:
+        if alert["keyword"] in website or alert["keyword"] in ip_address:
+            alert = f"ALERT: Keyword '{alert['keyword']}' found in packet data!"
+            alert_bool = True
+        else:
+            alert_bool = False
+
     insert = {
         "username": username,
         "hostname": hostname,
@@ -36,6 +59,7 @@ def receive_sniff_data():
         "ip_address": ip_address,
         "source_ip": source_ip,
         "timestamp": datetime.datetime.now(),
+        "alert": alert_bool,
     }
 
     swipe_collection.insert_one(insert)
@@ -43,9 +67,12 @@ def receive_sniff_data():
     return jsonify({"status": "success", "message": "Data received"}), 200
 
 
-@server.route("/api/packetSniff/getSniffs", methods=["GET"])
+@server.route("/api/packet/get", methods=["GET"])
 def get_sniffs():
     sniffs = list(swipe_collection.find())
     for sniff in sniffs:
         sniff["_id"] = str(sniff["_id"]) if "_id" in sniff else None
+        # Ensure timestamp is serializable (ISO format)
+        if "timestamp" in sniff and hasattr(sniff["timestamp"], "isoformat"):
+            sniff["timestamp"] = sniff["timestamp"].isoformat()
     return jsonify({"status": "success", "data": sniffs})

@@ -1,5 +1,6 @@
 * {
   box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
@@ -32,6 +33,19 @@ main {
   background-color: #eee;
   padding: 8px;
   margin-bottom: 5px;
+}
+
+.camera {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 20px;
+  display: inline-block;
+  text-align: center;
+}
+
+.alert {
+  background-color: #ffcccc !important;
 }
 
 /* Header */
