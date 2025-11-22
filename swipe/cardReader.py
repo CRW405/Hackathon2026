@@ -37,12 +37,6 @@ while running:
         else:
             print("ERROR RECORDING STUDENT ID")
 
-<<<<<<< HEAD
-=======
-        # response = requests.post(url, data=infoString)
-        # print(response.text)
-        print(infoString)
->>>>>>> samantha
     else:
         print("NOT A VALID STUDENT ID")
     rawInput = ""
