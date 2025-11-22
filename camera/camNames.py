@@ -2,14 +2,35 @@ import cv2
 from flask import Blueprint, jsonify, request
 from ultralytics import YOLO
 from pymongo import MongoClient
+import os
+import threading
+import time
+import requests
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["hackathon"]
-swipe_collection = db["swipes"]
+# client = MongoClient("mongodb://localhost:27017/")
+# db = client["hackathon"]
+# swipe_collection = db["swipes"]
 
-server = Blueprint("swipe", __name__)
-@server.route("/api/getSwipes", methods=["GET"])
-def main():
+# server = Blueprint("swipe", __name__)
+# @server.route("/api/getSwipes", methods=["GET"])
+
+
+
+
+CAMERA_ID = os.getlogin()
+
+try:
+    from dotenv import load_dotenv
+    from pathlib import Path
+    env_path = Path(__file__).resolve().parents[2] / '.env'
+except Exception:
+    pass
+
+SERVER_BASE = os.environ.get("SERVER", "http://localhost:6000")
+SERVER_URL = f"{SERVER_BASE}/api/cameras/post/{CAMERA_ID}"
+CAM_INDEX = 0
+
+def run_camera():
     print("Loading AI Model...")
     model = YOLO("yolov8n.pt")
 
@@ -23,7 +44,7 @@ def main():
 
     # swipe[0] = "unknown"
     try: 
-        # swipes = list(swipe_collection.find())
+        swipes = list(swipe_collection.find())
 
         person_names = {index + 1: entry['first'] for index, entry in enumerate(swipes) if 'first' in entry}
 
@@ -69,13 +90,31 @@ def main():
                         cv2.putText(frame, name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
 
-        cv2.imshow("YOLOv8 AI Person Tracking", frame)
+        # annotated = results[0].plot()
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        # cv2.imshow("YOLOv8 AI Person Tracking", frame)
 
-    cap.release()
-    cv2.destroyAllWindows()
+        flag, encoded = cv2.imencode(".JPG", frame)
+        if not flag:
+            continue
+        frame_bytes = encoded.tobytes()
+
+        try: 
+            requests.post(
+                SERVER_URL,
+                files={"frame": ("frame.jpg", frame_bytes, "image/jpeg")},
+                timeout=0.1
+            )
+        except requests.exceptions.RequestException:
+            pass
+
+        time.sleep(0.03)
+
+        # if cv2.waitKey(1) & 0xFF == ord("q"):
+        #     break
+
+        # cap.release()
+        # cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main()
+    run_camera()
