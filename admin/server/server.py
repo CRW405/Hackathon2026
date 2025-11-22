@@ -5,12 +5,6 @@ from routes.packet import server as packet_routes
 
 server = Flask(__name__)
 
-
-@server.route("/api/placeholder", methods=["GET"])
-def placeholder_api():
-    return jsonify({"message": "This is a placeholder API endpoint."})
-
-
 server.register_blueprint(swipe_routes)
 server.register_blueprint(packet_routes)
 

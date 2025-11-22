@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 import datetime
 from pymongo import MongoClient
 
@@ -9,20 +9,24 @@ swipe_collection = db["swipes"]
 server = Blueprint("swipe", __name__)
 
 
-@server.route("/api/trackSwipe/<card_info>", methods=["POST"])
-def on_swipe(card_info):
-    # INPUT: "LAST, FIRS BID"
-    now = datetime.datetime.now()
-    info = card_info.split(",")
+@server.route("/api/trackSwipe/", methods=["POST"])
+def on_swipe():
+    data = request.json  # Get the JSON data from the request body
+
+    first = data.get("first")
+    last = data.get("last")
+    bid = data.get("bid")
+
     insert = {
-        "last": info[0].strip(),
-        "first": info[1].strip(),
-        "bid": info[2].strip(),
-        "timestamp": now,
+        "first": first,
+        "last": last,
+        "bid": bid,
+        "timestamp": datetime.datetime.now(),
     }
+
     swipe_collection.insert_one(insert)
-    insert["_id"] = str(insert["_id"]) if "_id" in insert else None
-    return jsonify({"status": "success", "data": insert})
+
+    return jsonify({"status": "success", "message": "Swipe recorded"}), 200
 
 
 @server.route("/api/getSwipes", methods=["GET"])

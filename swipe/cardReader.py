@@ -26,10 +26,17 @@ while running:
         idRaw = re.findall(idPattern, cardInfo)
 
         # FIRSTNAME, LASTNAME, B00XXXXXX
-        infoString = names[0] + ", " + names[1] + ", " + idRaw[0]
+        payload = {
+            "first": names[1].capitalize(),
+            "last": names[0].capitalize(),
+            "bid": "B" + idRaw[0],
+        }
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print("STUDENT ID RECORDED")
+        else:
+            print("ERROR RECORDING STUDENT ID")
 
-        response = requests.post(url + infoString, verify=False)
-        print(response.text)
     else:
         print("NOT A VALID STUDENT ID")
     rawInput = ""

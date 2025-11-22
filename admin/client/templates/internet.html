@@ -17,10 +17,10 @@
     <div class="datalist" id="recent-activities">
       <h2>Recent Activities</h2>
       <ol>
-        {% for swipe in swipes %}
+        {% for sniff in sniffs %}
         <li>
-          <h3>{{swipe.first}} {{swipe.last}}</h3>
-          <h4>{{swipe.bid}} {{swipe.timestamp}}</h4>
+          <h3>{{sniff.username}} {{sniff.website}}</h3>
+          <h4>{{sniff.source_ip}} {{sniff.timestamp}}</h4>
         </li>
         {% endfor %}
       </ol>
