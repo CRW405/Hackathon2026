@@ -11,6 +11,16 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from requests.exceptions import RequestException
+import os
+from pathlib import Path
+
+# Load .env if present
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parents[1] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
 
 
 client = Blueprint("swipes", __name__, url_prefix="/swipes")
@@ -25,7 +35,8 @@ def swipes_page():
     """
     swipes: List[Dict[str, Any]] = []
     try:
-        response = requests.get("http://localhost:6000/api/getSwipes", timeout=5)
+        backend = os.environ.get("SERVER", "http://localhost:6000")
+        response = requests.get(f"{backend}/api/getSwipes", timeout=5)
         if response.ok:
             try:
                 payload = response.json()
@@ -38,37 +49,22 @@ def swipes_page():
     except RequestException:
         logger.exception("Error fetching swipes from backend")
 
-    # Filters
+    # Filters: only username and badge id (date/time filtering removed)
     username: Optional[str] = request.args.get("username")
     bid: Optional[str] = request.args.get("bid")
 
-    sd = request.args.get("start_date")
-    st = request.args.get("start_time")
-    if sd:
-        start = f"{sd}T{st}" if st else f"{sd}T00:00:00"
-    else:
-        start = request.args.get("start")
-
-    ed = request.args.get("end_date")
-    et = request.args.get("end_time")
-    if ed:
-        end = f"{ed}T{et}" if et else f"{ed}T23:59:59"
-    else:
-        end = request.args.get("end")
-
-    if any([username, bid, start, end]):
+    if any([username, bid]):
         try:
             try:
                 from utils import filter_items
             except Exception:
                 from .utils import filter_items  # type: ignore
-
-            logger.info("Applying filters to swipes: username=%s bid=%s start=%s end=%s", username, bid, start, end)
             before_count = len(swipes) if isinstance(swipes, list) else 0
             sample_ts = [s.get("timestamp") for s in (swipes[:5] if isinstance(swipes, list) else [])]
+            logger.info("Applying filters to swipes: username=%s bid=%s before=%s", username, bid, before_count)
             logger.debug("Sample timestamps before filter: %s", sample_ts)
 
-            swipes = filter_items(swipes, username=username, badge_id=bid, start=start, end=end)
+            swipes = filter_items(swipes, username=username, badge_id=bid)
 
             after_count = len(swipes) if isinstance(swipes, list) else 0
             logger.info("Filter applied: before=%s after=%s", before_count, after_count)

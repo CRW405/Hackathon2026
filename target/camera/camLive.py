@@ -35,8 +35,19 @@ import os
 
 # --- CONFIGURATION ---
 CAMERA_ID = os.getlogin()  # Unique ID for this camera
-# The backend admin server listens on port 6000 by default
-SERVER_URL = "http://localhost:6000/api/cameras/post/" + CAMERA_ID
+
+# Load .env if present so SERVER env can be used
+try:
+    from dotenv import load_dotenv
+    from pathlib import Path
+    env_path = Path(__file__).resolve().parents[2] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
+
+# The backend admin server base URL is read from SERVER env or defaults to localhost:6000
+SERVER_BASE = os.environ.get("SERVER", "http://localhost:6000")
+SERVER_URL = f"{SERVER_BASE}/api/cameras/post/{CAMERA_ID}"
 CAM_INDEX = 0  # Camera device index
 
 

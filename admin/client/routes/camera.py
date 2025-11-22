@@ -1,10 +1,21 @@
 from flask import Blueprint, render_template, Response, stream_with_context
 import requests
+import os
+from pathlib import Path
+
+# Load environment variables from .env if present (best-effort)
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parents[2] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    # dotenv is optional; fall back to existing environment
+    pass
 
 client = Blueprint("camera", __name__, template_folder="templates")
 
-# Backend server base URL (admin backend)
-BACKEND = "http://localhost:6000"
+# Backend server base URL (admin backend) read from env var SERVER or default to localhost:6000
+BACKEND = os.environ.get("SERVER", "http://localhost:6000")
 
 
 @client.route("/camera")

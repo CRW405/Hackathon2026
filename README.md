@@ -21,7 +21,12 @@ This README documents how to run the components locally and what each part does.
 ## Requirements
 
 - Python 3.11+ (project was developed with modern typing features)
-- MongoDB running locally and accessible at `mongodb://localhost:27017/`
+- MongoDB connection and service URLs are configurable via a `.env` file or environment variables. The following keys are supported with defaults shown:
+
+- `SERVER` (default: `http://localhost:6000`) - backend admin server URL
+- `CLIENT` (default: `http://localhost:3000`) - client origin allowed by CORS
+- `MONGO_URI` (default: `mongodb://localhost:27017/`) - MongoDB connection string
+- `DB` (default: `hackathon`) - MongoDB database name used by the app
 - Install Python deps: `pip install -r requirements.txt`
 
 ## Quick start

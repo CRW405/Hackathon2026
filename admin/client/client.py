@@ -20,6 +20,19 @@ from requests.exceptions import RequestException
 from routes.internet import client as internet_routes
 from routes.swipes import client as swipes_routes
 from routes.camera import client as camera_routes
+import os
+from pathlib import Path
+
+# Load .env if present
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parents[1] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
+
+# Backend server base URL (env: SERVER) default to localhost:6000
+BACKEND = os.environ.get("SERVER", "http://localhost:6000")
 
 
 def create_app() -> Flask:
@@ -60,13 +73,13 @@ def create_app() -> Flask:
                 return []
 
         # Fetch swipe data
-        swipes_response = fetch_data("http://localhost:6000/api/getSwipes")
+        swipes_response = fetch_data(f"{BACKEND}/api/getSwipes")
         swipes = (
             swipes_response.get("data", []) if isinstance(swipes_response, dict) else []
         )
 
         # Fetch sniff data
-        sniffs_response = fetch_data("http://localhost:6000/api/packet/get")
+        sniffs_response = fetch_data(f"{BACKEND}/api/packet/get")
         sniffs = (
             sniffs_response.get("data", []) if isinstance(sniffs_response, dict) else []
         )
@@ -89,53 +102,18 @@ def create_app() -> Flask:
             app.logger.error("Error merging and sorting data: %s", str(e))
             merged_data = []
 
-        # Apply filters from query parameters (GET)
+        # Apply filters from query parameters (date/time removed)
         username = request.args.get("username")
         badge_id = request.args.get("bid")
         website = request.args.get("website")
 
-        # Combine date+time inputs into ISO datetimes if provided. Fall back to
-        # legacy `start`/`end` parameters when date inputs are not present.
-        sd = request.args.get("start_date")
-        st = request.args.get("start_time")
-        if sd:
-            # if time omitted, treat start as beginning of the day
-            start = f"{sd}T{st}" if st else f"{sd}T00:00:00"
-        else:
-            # Support time-only input: if user supplied a time but no date,
-            # assume today's date (server local date) so time-only filters work.
-            if st:
-                from datetime import date
-
-                today = date.today().isoformat()
-                start = f"{today}T{st}"
-            else:
-                start = request.args.get("start")
-
-        ed = request.args.get("end_date")
-        et = request.args.get("end_time")
-        if ed:
-            # if time omitted, treat end as inclusive end of the day
-            end = f"{ed}T{et}" if et else f"{ed}T23:59:59"
-        else:
-            # Support time-only input for end: use today's date when date omitted.
-            if et:
-                from datetime import date
-
-                today = date.today().isoformat()
-                end = f"{today}T{et}"
-            else:
-                end = request.args.get("end")
-
-        if any([username, badge_id, website, start, end]):
+        if any([username, badge_id, website]):
             try:
                 app.logger.info(
-                    "Applying filters: username=%s bid=%s website=%s start=%s end=%s",
+                    "Applying filters: username=%s bid=%s website=%s",
                     username,
                     badge_id,
                     website,
-                    start,
-                    end,
                 )
                 before_count = len(merged_data) if isinstance(merged_data, list) else 0
                 sample_ts = [
@@ -149,8 +127,6 @@ def create_app() -> Flask:
                     username=username,
                     badge_id=badge_id,
                     website=website,
-                    start=start,
-                    end=end,
                 )
 
                 after_count = len(merged_data) if isinstance(merged_data, list) else 0

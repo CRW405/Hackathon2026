@@ -11,10 +11,24 @@ Data is persisted into a local MongoDB database named `hackathon`.
 
 from flask import Blueprint, jsonify, request
 import datetime
+import os
+from pathlib import Path
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["hackathon"]
+# Load .env if present
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parents[2] / '.env'
+    load_dotenv(env_path)
+except Exception:
+    pass
+
+# MongoDB connection
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
+DB_NAME = os.environ.get("DB", "hackathon")
+
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
 swipe_collection = db["swipes"]
 
 server = Blueprint("swipe", __name__)
