@@ -15,6 +15,4 @@ def swipes_page():
         swipes = []
         print(f"Error fetching swipes: {e}")
 
-        swipes = swipes[::-1]
-
     return render_template("swipes.html", swipes=swipes)
