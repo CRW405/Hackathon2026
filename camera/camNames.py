@@ -1,6 +1,14 @@
 import cv2
+from flask import Blueprint, jsonify, request
 from ultralytics import YOLO
+from pymongo import MongoClient
 
+client = MongoClient("mongodb://localhost:27017/")
+db = client["hackathon"]
+swipe_collection = db["swipes"]
+
+server = Blueprint("swipe", __name__)
+@server.route("/api/getSwipes", methods=["GET"])
 def main():
     print("Loading AI Model...")
     model = YOLO("yolov8n.pt")
@@ -13,16 +21,21 @@ def main():
         print("Error: Could not open webcam.")
         return
 
-    print("Starting Tracking... Press 'q' to exit.")
+    # swipe[0] = "unknown"
+    try: 
+        # swipes = list(swipe_collection.find())
 
-    person_names = {
-        1: "Samantha",
-        2: "Bryan",
-        3: "Caleb",
-        4:"Micheal",
-        100:"Unknown",
-        
-    }
+        person_names = {index + 1: entry['first'] for index, entry in enumerate(swipes) if 'first' in entry}
+
+        print (person_names)
+    except:
+        person_names = {
+            1: "unknown",
+            2: "unknown",
+            3: "unknown",
+        }
+
+    print("Starting Tracking... Press 'q' to exit.")
 
     while True:
         success, frame = cap.read()
