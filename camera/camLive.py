@@ -1,3 +1,17 @@
+"""Lightweight FastAPI-based camera server running a YOLOv8 tracker.
+
+This module runs a background tracker thread that analyzes camera frames
+and exposes a small HTTP API to stream the annotated video and provide
+JSON tracking data. It is intended as a demo and may require GPU or
+native OpenCV support to perform well.
+
+Usage:
+    python camera/camLive.py
+
+Warning: This accesses the webcam and performs face/person detection. Use
+this only where you have permission to capture video.
+"""
+
 import cv2
 import threading
 import uvicorn

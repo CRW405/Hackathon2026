@@ -1,3 +1,12 @@
+"""Server routes for receiving and returning network sniff events.
+
+Endpoints:
+- POST /api/packetSniff/postSniffs  -> accepts JSON with username, website, ip_address, source_ip, hostname
+- GET  /api/packetSniff/getSniffs   -> returns stored sniff documents
+
+Data is stored in MongoDB in the `packets` collection.
+"""
+
 from flask import Blueprint, jsonify, request
 import datetime
 from pymongo import MongoClient

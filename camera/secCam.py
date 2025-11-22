@@ -1,3 +1,9 @@
+"""Standalone camera tracker for local demo and testing.
+
+This script runs YOLOv8 on a local webcam and displays the annotated
+video. It is provided for offline experimentation.
+"""
+
 import cv2
 from ultralytics import YOLO
 

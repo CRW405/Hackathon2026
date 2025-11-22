@@ -1,3 +1,14 @@
+"""Network sniffer that extracts SNI/HTTP hostnames and reports them to a server.
+
+This script uses scapy to inspect TCP payloads and attempts to parse TLS SNI
+extensions and HTTP `Host:` headers. When a host is discovered, a POST request
+is sent to the configured backend server.
+
+WARNING: Running this script may require root privileges and will observe
+network traffic on the host. Use only on machines and networks where you have
+permission to capture traffic.
+"""
+
 from scapy.all import sniff, IP, TCP, Raw
 import socket
 import time
