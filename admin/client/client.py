@@ -19,6 +19,7 @@ import requests
 from requests.exceptions import RequestException
 from routes.internet import client as internet_routes
 from routes.swipes import client as swipes_routes
+from routes.camera import client as camera_routes
 
 
 def create_app() -> Flask:
@@ -31,6 +32,7 @@ def create_app() -> Flask:
     # Register blueprints
     app.register_blueprint(internet_routes)
     app.register_blueprint(swipes_routes)
+    app.register_blueprint(camera_routes)
 
     @app.route("/", methods=["GET", "POST"])
     def index():
@@ -40,13 +42,13 @@ def create_app() -> Flask:
         """
 
         from flask import request
+
         # utils.py lives in the same package folder
         try:
             from utils import filter_items
         except Exception:
             # best-effort import; if running as package adjust import path
             from .utils import filter_items  # type: ignore
-
 
         def fetch_data(url: str) -> Dict[str, Any] | List[Any]:
             try:
@@ -59,13 +61,15 @@ def create_app() -> Flask:
 
         # Fetch swipe data
         swipes_response = fetch_data("http://localhost:6000/api/getSwipes")
-        swipes = swipes_response.get("data", []) if isinstance(swipes_response, dict) else []
+        swipes = (
+            swipes_response.get("data", []) if isinstance(swipes_response, dict) else []
+        )
 
         # Fetch sniff data
-        sniffs_response = fetch_data(
-            "http://localhost:6000/api/packetSniff/getSniffs"
+        sniffs_response = fetch_data("http://localhost:6000/api/packetSniff/getSniffs")
+        sniffs = (
+            sniffs_response.get("data", []) if isinstance(sniffs_response, dict) else []
         )
-        sniffs = sniffs_response.get("data", []) if isinstance(sniffs_response, dict) else []
 
         # Combine and sort swipes and sniffs data
         merged_data: List[Dict[str, Any]] = []
@@ -110,9 +114,19 @@ def create_app() -> Flask:
 
         if any([username, badge_id, website, start, end]):
             try:
-                app.logger.info("Applying filters: username=%s bid=%s website=%s start=%s end=%s", username, badge_id, website, start, end)
+                app.logger.info(
+                    "Applying filters: username=%s bid=%s website=%s start=%s end=%s",
+                    username,
+                    badge_id,
+                    website,
+                    start,
+                    end,
+                )
                 before_count = len(merged_data) if isinstance(merged_data, list) else 0
-                sample_ts = [m.get("timestamp") for m in (merged_data[:5] if isinstance(merged_data, list) else [])]
+                sample_ts = [
+                    m.get("timestamp")
+                    for m in (merged_data[:5] if isinstance(merged_data, list) else [])
+                ]
                 app.logger.debug("Sample timestamps before filter: %s", sample_ts)
 
                 merged_data = filter_items(
@@ -125,7 +139,9 @@ def create_app() -> Flask:
                 )
 
                 after_count = len(merged_data) if isinstance(merged_data, list) else 0
-                app.logger.info("Filter applied: before=%s after=%s", before_count, after_count)
+                app.logger.info(
+                    "Filter applied: before=%s after=%s", before_count, after_count
+                )
             except Exception:
                 app.logger.exception("Error applying filters")
 

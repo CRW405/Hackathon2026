@@ -2,12 +2,7 @@ import re
 import requests
 import os
 
-try:
-    from dotenv import load_dotenv
-
-    load_dotenv()
-except Exception:
-    pass
+from dotenv import load_dotenv
 
 # Build backend URL from environment or defaults
 backend_base = os.environ.get("BACKEND_BASE_URL")

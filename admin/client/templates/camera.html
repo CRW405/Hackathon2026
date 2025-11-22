@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
+</head>
+
+<body>
+  {% include 'components/header.html' %}
+
+  <main>
+    <h1>Cameras</h1>
+
+    <div id="cams"></div>
+    <script>
+      // Use same-origin proxy endpoints provided by the client app
+      const LIST_ENDPOINT = `/api/cameras/list`;
+      const STREAM_BASE = `/api/cameras/stream`;
+
+      let retryDelay = 1000;
+
+      async function loadCameras() {
+        try {
+          const res = await fetch(LIST_ENDPOINT, { cache: 'no-store' });
+          if (!res.ok) throw new Error('Bad response');
+          const data = await res.json();
+
+          const div = document.getElementById("cams");
+          div.innerHTML = "";
+
+          data.cameras.forEach(id => {
+            div.innerHTML += `
+              <h3>${id}</h3>
+              <img src="${STREAM_BASE}/${id}" alt="${id}" />
+          `;
+          });
+
+          // reset retry on success
+          retryDelay = 1000;
+        } catch (err) {
+          console.debug('Failed to load cameras:', err);
+          // Backoff to avoid spamming the console
+          setTimeout(loadCameras, retryDelay);
+          retryDelay = Math.min(30000, retryDelay * 2);
+        }
+      }
+
+      // Poll camera list every 2s when available
+      setInterval(loadCameras, 2000);
+      loadCameras();
+    </script>
+  </main>
+
+  {% include 'components/footer.html' %}
+</body>
+
+</html>
