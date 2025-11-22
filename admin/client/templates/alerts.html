@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
+</head>
+
+<body>
+  {% include 'components/header.html' %}
+
+  <main>
+        <h1>Create New Alert</h1>
+        <form id="alertForm">
+          <label for="keyword">Keyword:</label>
+          <input type="text" id="keyword" name="keyword" required>
+          <label for="type">Type:</label>
+          <input type="text" id="type" name="type" required>
+          <button type="submit">Submit</button>
+        </form>
+          <script>
+            document.getElementById('alertForm').addEventListener('submit', async (event) => {
+              event.preventDefault();
+  
+              const keyword = document.getElementById('keyword').value;
+              const type = document.getElementById('type').value;
+
+              // Backend base URL passed from Flask (e.g. http://localhost:6000)
+              // If backend is same-origin you can use relative path; otherwise use the provided backend URL.
+              const backendBase = '{{ backend }}' || '';
+              let url;
+              try {
+                const pageOrigin = window.location.origin;
+                const backendOrigin = backendBase ? new URL(backendBase).origin : pageOrigin;
+                // If backend is same origin as the page, call it directly. Otherwise use the client proxy
+                if (backendOrigin === pageOrigin) {
+                  url = backendBase ? (backendBase.replace(/\/$/, '') + '/api/alerts/post') : '/api/alerts/post';
+                } else {
+                  // Use the client-side proxy which forwards to the backend server to avoid CORS
+                  url = '/alerts/api/alerts/post';
+                }
+              } catch (e) {
+                console.warn('Error parsing backend URL, falling back to proxy', e);
+                url = '/alerts/api/alerts/post';
+              }
+
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ keyword, type }),
+              });
+  
+              if (response.ok) {
+                alert('Alert created successfully!');
+                // clear form
+                document.getElementById('alertForm').reset();
+              } else {
+                const text = await response.text();
+                console.error('Failed to create alert:', response.status, text);
+                alert('Failed to create alert. See console for details.');
+              }
+            });
+          </script>
+  </main>
+
+  {% include 'components/footer.html' %}
+</body>
+
+</html>

@@ -34,7 +34,7 @@ swipe_collection = db["swipes"]
 server = Blueprint("swipe", __name__)
 
 
-@server.route("/api/trackSwipe/", methods=["POST"])
+@server.route("/api/swipe/post", methods=["POST"])
 def on_swipe():
     data = request.json  # Get the JSON data from the request body
 
@@ -42,11 +42,22 @@ def on_swipe():
     last = data.get("last")
     bid = data.get("bid")
 
+    alerts = db["alerts"]
+    packet_alert = alerts.find({"type": "swipe"})
+
+    for alert in packet_alert:
+        if alert["keyword"] in first or alert["keyword"] in last or alert["keyword"] in bid:
+            alert = f"ALERT: Keyword '{alert['keyword']}' found in swipe data!"
+            alert_bool = True
+        else:
+            alert_bool = False
+
     insert = {
         "first": first,
         "last": last,
         "bid": bid,
         "timestamp": datetime.datetime.now(),
+        "alert": alert_bool,
     }
 
     swipe_collection.insert_one(insert)
@@ -54,7 +65,7 @@ def on_swipe():
     return jsonify({"status": "success", "message": "Swipe recorded"}), 200
 
 
-@server.route("/api/getSwipes", methods=["GET"])
+@server.route("/api/swipe/get", methods=["GET"])
 def get_swipes():
     swipes = list(swipe_collection.find())
     for swipe in swipes:

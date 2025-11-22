@@ -20,13 +20,15 @@ from requests.exceptions import RequestException
 from routes.internet import client as internet_routes
 from routes.swipes import client as swipes_routes
 from routes.camera import client as camera_routes
+from routes.alerts import client as alerts_routes
 import os
 from pathlib import Path
 
 # Load .env if present
 try:
     from dotenv import load_dotenv
-    env_path = Path(__file__).resolve().parents[1] / '.env'
+
+    env_path = Path(__file__).resolve().parents[1] / ".env"
     load_dotenv(env_path)
 except Exception:
     pass
@@ -38,6 +40,9 @@ BACKEND = os.environ.get("SERVER", "http://localhost:6000")
 def create_app() -> Flask:
     app = Flask(__name__)
 
+    # Backend server base URL available to templates and client-side code
+    app.config['BACKEND'] = BACKEND
+
     # Setup logging
     logging.basicConfig(level=logging.INFO)
     app.logger.setLevel(logging.INFO)
@@ -46,6 +51,7 @@ def create_app() -> Flask:
     app.register_blueprint(internet_routes)
     app.register_blueprint(swipes_routes)
     app.register_blueprint(camera_routes)
+    app.register_blueprint(alerts_routes)
 
     @app.route("/", methods=["GET", "POST"])
     def index():

@@ -5,14 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # Build backend URL from environment or defaults
-backend_base = os.environ.get("BACKEND_BASE_URL")
-if not backend_base:
-    backend_host = os.environ.get("BACKEND_HOST", "127.0.0.1")
-    backend_port = os.environ.get("BACKEND_PORT", "6000")
-    backend_base = f"http://{backend_host}:{backend_port}"
-
-track_path = os.environ.get("TRACK_SWIPE_PATH", "/api/swipe/post/")
-url = f"{backend_base}{track_path}"
+url = os.environ.get("SERVER", "http://localhost:6000") + "/api/swipe/post"
 
 # RegEx patterns to parse raw input data
 

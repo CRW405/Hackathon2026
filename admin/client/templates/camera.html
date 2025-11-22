@@ -33,8 +33,10 @@
 
           data.cameras.forEach(id => {
             div.innerHTML += `
+            <div class="camera">
               <h3>${id}</h3>
               <img src="${STREAM_BASE}/${id}" alt="${id}" />
+            </div>
           `;
           });
 

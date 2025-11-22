@@ -72,3 +72,27 @@ This project contains tools that can capture network metadata (SNI/HTTP host) an
 If you'd like additional docs (API doc, OpenAPI spec, or developer setup scripts), open an issue or submit a PR.
 
 
+3. Run the admin client UI from `admin/client`:
+
+	python admin/client/client.py
+
+	The client runs on port 5000 and provides:
+	- / (combined dashboard)
+	- /swipes (swipes page)
+	- /internet (network sniff page)
+
+## Design notes
+
+- The admin client fetches data from the backend and provides query-parameter based filtering. Imports are written to work when run as a script or package.
+- Timestamps are stored as Python `datetime` objects in MongoDB; the client utilities provide tolerant parsing for ISO datetimes, epoch seconds, and strings ending with Z (UTC).
+
+## Files of interest
+
+- `admin/server/routes/*.py` — REST endpoints and MongoDB persistence.
+- `admin/client/routes/*.py` — Blueprints used by the client UI.
+- `admin/client/utils.py` — Filtering and datetime parsing helpers (well-documented functions).
+- `packetSniffer/gemSnifferV3.py` — network sniffing and SNI/host extraction (use carefully; requires appropriate permissions).
+
+## Security and ethics
+
+This project contains tools that can capture network metadata (SNI/HTTP host) and keystrokes. Only run these tools in controlled, consenting environments. Do not deploy or use them to capture data you are not authorized to collect.

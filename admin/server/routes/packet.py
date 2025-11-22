@@ -42,6 +42,16 @@ def receive_sniff_data():
     source_ip = data.get("source_ip")
     hostname = data.get("hostname")
 
+    alerts = db["alerts"]
+    packet_alert = alerts.find({"type": "packet"})
+
+    for alert in packet_alert:
+        if alert["keyword"] in website or alert["keyword"] in ip_address:
+            alert = f"ALERT: Keyword '{alert['keyword']}' found in packet data!"
+            alert_bool = True
+        else:
+            alert_bool = False
+
     insert = {
         "username": username,
         "hostname": hostname,
@@ -49,6 +59,7 @@ def receive_sniff_data():
         "ip_address": ip_address,
         "source_ip": source_ip,
         "timestamp": datetime.datetime.now(),
+        "alert": alert_bool,
     }
 
     swipe_collection.insert_one(insert)

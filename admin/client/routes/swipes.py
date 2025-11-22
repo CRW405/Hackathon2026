@@ -36,7 +36,7 @@ def swipes_page():
     swipes: List[Dict[str, Any]] = []
     try:
         backend = os.environ.get("SERVER", "http://localhost:6000")
-        response = requests.get(f"{backend}/api/getSwipes", timeout=5)
+        response = requests.get(f"{backend}/api/swipe/get", timeout=5)
         if response.ok:
             try:
                 payload = response.json()

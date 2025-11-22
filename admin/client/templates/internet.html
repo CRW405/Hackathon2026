@@ -12,7 +12,7 @@
   {% include 'components/header.html' %}
 
   <main>
-    <h1>Welcome to the 2084 Dashboard</h1>
+    <h1>Internet Traffic</h1>
     <div class="datalist" id="recent-activities">
       <form method="get" class="filter-form">
         <input type="text" name="username" placeholder="Username" value="{{ request.args.get('username','') }}">
@@ -23,7 +23,12 @@
       <h2>Recent Activities</h2>
       <ol>
         {% for sniff in sniffs %}
+        {% if sniff.alert %}
+        <li class="alert">
+          <h3>ALERT: Potential issue detected</h3>
+        {% else %}
         <li>
+          {% endif %}
           <h3>{{ sniff.username }} Visited {{ sniff.website }} on {{ sniff.timestamp }}</h3>
           <h4>{{ sniff.source_ip }}</h4>
         </li>
