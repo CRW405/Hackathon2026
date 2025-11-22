@@ -45,4 +45,7 @@ def get_swipes():
     swipes = list(swipe_collection.find())
     for swipe in swipes:
         swipe["_id"] = str(swipe["_id"]) if "_id" in swipe else None
+        # Ensure timestamp is serializable (ISO format)
+        if "timestamp" in swipe and hasattr(swipe["timestamp"], "isoformat"):
+            swipe["timestamp"] = swipe["timestamp"].isoformat()
     return jsonify({"status": "success", "data": swipes})

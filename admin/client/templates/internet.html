@@ -28,8 +28,8 @@
       <ol>
         {% for sniff in sniffs %}
         <li>
-          <h3>{{ sniff.username }} {{ sniff.website }}</h3>
-          <h4>{{ sniff.source_ip }} {{ sniff.timestamp }}</h4>
+          <h3>{{ sniff.username }} Visited {{ sniff.website }} on {{ sniff.timestamp }}</h3>
+          <h4>{{ sniff.source_ip }}</h4>
         </li>
         {% else %}
         <li>No recent activities.</li>

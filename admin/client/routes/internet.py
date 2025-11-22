@@ -27,7 +27,7 @@ def internet_page():
     sniffs: List[Dict[str, Any]] = []
     try:
         response = requests.get(
-            "http://localhost:6000/api/packetSniff/getSniffs", timeout=5
+            "http://localhost:6000/api/packet/get", timeout=5
         )
         if response.ok:
             try:

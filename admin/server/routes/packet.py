@@ -18,7 +18,7 @@ swipe_collection = db["packets"]
 server = Blueprint("sniff", __name__)
 
 
-@server.route("/api/packetSniff/postSniffs", methods=["POST"])
+@server.route("/api/packet/post", methods=["POST"])
 def receive_sniff_data():
     data = request.json  # Get the JSON data from the request body
 
@@ -43,9 +43,12 @@ def receive_sniff_data():
     return jsonify({"status": "success", "message": "Data received"}), 200
 
 
-@server.route("/api/packetSniff/getSniffs", methods=["GET"])
+@server.route("/api/packet/get", methods=["GET"])
 def get_sniffs():
     sniffs = list(swipe_collection.find())
     for sniff in sniffs:
         sniff["_id"] = str(sniff["_id"]) if "_id" in sniff else None
+        # Ensure timestamp is serializable (ISO format)
+        if "timestamp" in sniff and hasattr(sniff["timestamp"], "isoformat"):
+            sniff["timestamp"] = sniff["timestamp"].isoformat()
     return jsonify({"status": "success", "data": sniffs})

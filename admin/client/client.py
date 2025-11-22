@@ -66,7 +66,7 @@ def create_app() -> Flask:
         )
 
         # Fetch sniff data
-        sniffs_response = fetch_data("http://localhost:6000/api/packetSniff/getSniffs")
+        sniffs_response = fetch_data("http://localhost:6000/api/packet/get")
         sniffs = (
             sniffs_response.get("data", []) if isinstance(sniffs_response, dict) else []
         )
@@ -102,7 +102,15 @@ def create_app() -> Flask:
             # if time omitted, treat start as beginning of the day
             start = f"{sd}T{st}" if st else f"{sd}T00:00:00"
         else:
-            start = request.args.get("start")
+            # Support time-only input: if user supplied a time but no date,
+            # assume today's date (server local date) so time-only filters work.
+            if st:
+                from datetime import date
+
+                today = date.today().isoformat()
+                start = f"{today}T{st}"
+            else:
+                start = request.args.get("start")
 
         ed = request.args.get("end_date")
         et = request.args.get("end_time")
@@ -110,7 +118,14 @@ def create_app() -> Flask:
             # if time omitted, treat end as inclusive end of the day
             end = f"{ed}T{et}" if et else f"{ed}T23:59:59"
         else:
-            end = request.args.get("end")
+            # Support time-only input for end: use today's date when date omitted.
+            if et:
+                from datetime import date
+
+                today = date.today().isoformat()
+                end = f"{today}T{et}"
+            else:
+                end = request.args.get("end")
 
         if any([username, badge_id, website, start, end]):
             try:
