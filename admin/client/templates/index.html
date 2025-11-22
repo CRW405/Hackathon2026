@@ -13,10 +13,21 @@
 
   <main>
     <h1>Welcome to the 2084 Dashboard</h1>
-
     <div class="datalist" id="recent-activities">
+      <form method="get" class="filter-form">
+        <input type="text" name="username" placeholder="Username" value="{{ request.args.get('username','') }}">
+        <input type="text" name="bid" placeholder="Badge ID" value="{{ request.args.get('bid','') }}">
+        <input type="text" name="website" placeholder="Website" value="{{ request.args.get('website','') }}">
+  {# Use date inputs; if full ISO present, show only the date portion #}
+  <input type="date" name="start_date" placeholder="Start" value="{{ (request.args.get('start','')[:10]) if request.args.get('start') else request.args.get('start_date','') }}">
+  <input type="time" name="start_time" value="{{ request.args.get('start_time','') }}">
+  <input type="date" name="end_date" placeholder="End" value="{{ (request.args.get('end','')[:10]) if request.args.get('end') else request.args.get('end_date','') }}">
+  <input type="time" name="end_time" value="{{ request.args.get('end_time','') }}">
+        <button type="submit">Filter</button>
+        <a href="{{ url_for('index') }}">Clear</a>
+      </form>
       <h2>Recent Activities</h2>
-      <ol>
+  <ol>
         {% for entry in data %}
         <li>
           {% if entry.type == "swipe" %}
@@ -30,6 +41,8 @@
           <h4>Timestamp: {{ entry.timestamp }}</h4>
           {% endif %}
         </li>
+        {% else %}
+        <li>No recent activities.</li>
         {% endfor %}
       </ol>
     </div>

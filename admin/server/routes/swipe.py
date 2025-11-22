@@ -1,3 +1,14 @@
+"""Server routes for handling badge swipe events.
+
+This module exposes two endpoints consumed by the client UI and the
+badge-reader script:
+
+- POST /api/trackSwipe/  -> expects JSON with keys `first`, `last`, `bid`
+- GET  /api/getSwipes    -> returns stored swipe documents
+
+Data is persisted into a local MongoDB database named `hackathon`.
+"""
+
 from flask import Blueprint, jsonify, request
 import datetime
 from pymongo import MongoClient

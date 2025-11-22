@@ -13,15 +13,26 @@
 
   <main>
     <h1>Welcome to the 2084 Dashboard</h1>
-
     <div class="datalist" id="recent-activities">
+      <form method="get" class="filter-form">
+        <input type="text" name="username" placeholder="Username" value="{{ request.args.get('username','') }}">
+        <input type="text" name="website" placeholder="Website" value="{{ request.args.get('website','') }}">
+  <input type="date" name="start_date" placeholder="Start" value="{{ (request.args.get('start','')[:10]) if request.args.get('start') else request.args.get('start_date','') }}">
+  <input type="time" name="start_time" value="{{ request.args.get('start_time','') }}">
+  <input type="date" name="end_date" placeholder="End" value="{{ (request.args.get('end','')[:10]) if request.args.get('end') else request.args.get('end_date','') }}">
+  <input type="time" name="end_time" value="{{ request.args.get('end_time','') }}">
+        <button type="submit">Filter</button>
+        <a href="{{ url_for('internet.internet_page') }}">Clear</a>
+      </form>
       <h2>Recent Activities</h2>
       <ol>
         {% for sniff in sniffs %}
         <li>
-          <h3>{{sniff.username}} {{sniff.website}}</h3>
-          <h4>{{sniff.source_ip}} {{sniff.timestamp}}</h4>
+          <h3>{{ sniff.username }} {{ sniff.website }}</h3>
+          <h4>{{ sniff.source_ip }} {{ sniff.timestamp }}</h4>
         </li>
+        {% else %}
+        <li>No recent activities.</li>
         {% endfor %}
       </ol>
     </div>

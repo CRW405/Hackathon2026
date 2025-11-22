@@ -1,5 +1,13 @@
+"""Simpler packet sniffer example that resolves IPs to hostnames.
+
+This script is an early version used for demonstration. It attempts name
+resolution for IP addresses observed on port 80/443. It may be slow under
+heavy traffic due to blocking DNS lookups.
+"""
+
 from scapy.all import sniff, IP, TCP
 import socket
+
 
 def resolve_ip(ip_address):
     """
